@@ -1,28 +1,28 @@
 %clear #clear console
 
-# -------------------------- LIBRARIES --------------------------------------
+# ========================== LIBRARIES ======================================
 # Linear algebra
 import numpy as np
 
 # Data processing
 import pandas as pd
 
-
 # Data Visualization
 import matplotlib.pyplot as plt
 
-plt.close('all')
+# ========================== DATA READING ===================================
 
-# -------------------------- DATA READING -----------------------------------
 data1=pd.read_csv("Data/owid-covid-data.csv") # data covid all countries
-
-# Extract Data from Portugal
+# Extract Data Covid from Portugal
 data1_pt=data1.loc[data1['iso_code'] == 'PRT'] # [2020/02/02 - 2020/12/19]
 
-
+# Extract Data deaths in Portugal
 data2=pd.read_csv("Data/Dados_SICO_2020-12-20-Nr_mortes.csv")
 
-# -------------------------- DATA ANALYSIS ----------------------------------
+# Extract Data deaths by type in Portugal
+data3_excel=pd.read_excel('Data/PORDATA_Obitos-por-algumas-causas-de-morte.xlsx')
+
+# ========================== DATA ANALYSIS ==================================
 
 # Create variable with number of deaths by year in Portugal
 year=2015
@@ -39,7 +39,7 @@ while ( year != 2021):
     year = year+1
     i=i+1
 
-# Create variable with number of deaths by month for 6 years in Portugal
+# Create variable with number of deaths by month from 2015-2020
 pt_deaths_total_month = np.zeros((13,num_years))
 pt_deaths_total_month[0,[0,1,2,3,4,5]] = range(2015,2021)
 
@@ -60,17 +60,30 @@ for i in range(1,13):    # Cycle per each month
     n=n+days_per_month[i-1]
     if i != 12:
         sum_days = sum_days+days_per_month[i]
-    
 
-# -------------------------- DATA VISUALIZATION -----------------------------
+# Create variable with number of deaths by type from 2010-2018
+data3 = data3_excel.drop(data3_excel.index[0:6])
+# Clean and organize dataset as data3
+data3.reset_index(drop=True,inplace=True)
+data3 = data3.drop(data3.index[53:74])
+data3.reset_index(drop=True,inplace=True)
+data3=data3.iloc[0:53,0:11]
+data3=data3.rename(columns=data3.iloc[0])
+data3 = data3.drop(data3.index[0])
+data3.reset_index(drop=True,inplace=True)
+
+
+# ========================== DATA VISUALIZATION =============================
 
 # Graph 1: Number of deaths in Portugal by year
 plt.bar(pt_deaths_total_year[0,:],pt_deaths_total_year[1,:])
 plt.title('Portugal - Number of deaths by year')
-plt.show()
+plt.grid(linestyle=':')
+plt.yticks(np.arange(0,130000,10000))
 
-# Graph 2: Number of deaths in Portugal by month during 2015-2020
-# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Graph : Number of deaths in Portugal by month during 2015-2020
 # plt.figure()
 # f, axes = plt.subplots(1, 4, sharey=True)
 # plt.title('Portugal - Nr of deaths by month from 2015-2020')
@@ -78,11 +91,27 @@ plt.show()
 # for k in range(1,13):
 #     plt.subplot(2,6,k)
 #     plt.bar(pt_deaths_total_month[0,:],pt_deaths_total_month[k,:])
-# =============================================================================
+# ---------------------------------------------------------------------------
+
+# Graph 2: Number of deaths in Portugal by month during 2015-2020
+rows2=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+columns2=['2015','2016','2017','2018','2019','2020']
+df2=pd.DataFrame(data=pt_deaths_total_month[1:13,:],index=rows2,columns=columns2)
+df2.plot.bar()
+plt.title('Portugal - Nr of deaths by month from 2015-2020')
+plt.yticks(np.arange(0, 15000, 1000))
+plt.grid(linestyle=':')
 
 # Graph 3: Number of deaths in Portugal by month during 2015-2020
-rows1=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-columns1=['2015','2016','2017','2018','2019','2020']
-df=pd.DataFrame(data=pt_deaths_total_month[1:13,:],index=rows1,columns=columns1)
-df.plot.bar()
-plt.title('Portugal - Nr of deaths by month from 2015-2020')
+# =============================================================================
+rows3=['2010','2011','2012','2013','2014','2015','2016','2017','2018']
+columns3=['a','b','c','d','e','f','g','h','i','j']
+tmp3=data3.iloc[43:52,1:12]
+tmp3.reset_index(drop=True,inplace=True)
+tmp3.index = ['2010','2011','2012','2013','2014','2015','2016','2017','2018']
+tmp3.columns = ['Ap.Circ.','Tumores','Diabetes','Acidentes','Suicidio','Ap.Resp.','Ap.Dig.','Doenças infec.','Tuberc','Sida']
+tmp3.plot.bar()
+plt.title('Portugal - Nr of deaths by disease from 2010-2018')
+plt.yticks(np.arange(0, 35000, 2000))
+plt.grid(linestyle=':')
+# =============================================================================
