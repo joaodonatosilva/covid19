@@ -1,5 +1,4 @@
 %clear #clear console
-
 # ========================== LIBRARIES ======================================
 # Linear algebra
 import numpy as np
@@ -9,6 +8,7 @@ import pandas as pd
 
 # Data Visualization
 import matplotlib.pyplot as plt
+import plotly as px
 
 # ========================== DATA READING ===================================
 
@@ -17,10 +17,11 @@ data1=pd.read_csv("Data/owid-covid-data.csv") # data covid all countries
 data1_pt=data1.loc[data1['iso_code'] == 'PRT'] # [2020/02/02 - 2020/12/19]
 
 # Extract Data deaths in Portugal
-data2=pd.read_csv("Data/Dados_SICO_2020-12-20-Nr_mortes.csv")
+data2=pd.read_csv("Data/Dados_SICO_2020-12-30-Nr_mortes.csv")
 
 # Extract Data deaths by type in Portugal
 data3_excel=pd.read_excel('Data/PORDATA_Obitos-por-algumas-causas-de-morte.xlsx')
+
 
 # ========================== DATA ANALYSIS ==================================
 
@@ -75,13 +76,14 @@ data3.reset_index(drop=True,inplace=True)
 
 # ========================== DATA VISUALIZATION =============================
 
-# Graph 1: Number of deaths in Portugal by year
+# PLOT 1: Number of deaths in Portugal by year
 plt.bar(pt_deaths_total_year[0,:],pt_deaths_total_year[1,:])
 plt.title('Portugal - Number of deaths by year')
 plt.grid(linestyle=':')
 plt.yticks(np.arange(0,130000,10000))
 
-
+# TO DO-> ADD LEGEND OF THE VALUE OF EACH BAR!
+    
 # ---------------------------------------------------------------------------
 # Graph : Number of deaths in Portugal by month during 2015-2020
 # plt.figure()
@@ -93,7 +95,7 @@ plt.yticks(np.arange(0,130000,10000))
 #     plt.bar(pt_deaths_total_month[0,:],pt_deaths_total_month[k,:])
 # ---------------------------------------------------------------------------
 
-# Graph 2: Number of deaths in Portugal by month during 2015-2020
+# PLOT 2.1: Number of deaths in Portugal by month during 2015-2020
 rows2=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 columns2=['2015','2016','2017','2018','2019','2020']
 df2=pd.DataFrame(data=pt_deaths_total_month[1:13,:],index=rows2,columns=columns2)
@@ -102,16 +104,23 @@ plt.title('Portugal - Nr of deaths by month from 2015-2020')
 plt.yticks(np.arange(0, 15000, 1000))
 plt.grid(linestyle=':')
 
-# Graph 3: Number of deaths in Portugal by month during 2015-2020
-# =============================================================================
+# PLOT 2.2
+df2.plot()
+plt.title('Portugal - Nr of deaths by month from 2015-2020')
+
+
+# PLOT 3: Number of deaths in Portugal by month during 2015-2020
 rows3=['2010','2011','2012','2013','2014','2015','2016','2017','2018']
 columns3=['a','b','c','d','e','f','g','h','i','j']
-tmp3=data3.iloc[43:52,1:12]
+tmp3=data3.iloc[43:52,1:8]
 tmp3.reset_index(drop=True,inplace=True)
 tmp3.index = ['2010','2011','2012','2013','2014','2015','2016','2017','2018']
-tmp3.columns = ['Ap.Circ.','Tumores','Diabetes','Acidentes','Suicidio','Ap.Resp.','Ap.Dig.','Doenças infec.','Tuberc','Sida']
+tmp3.columns = ['Ap.Circ.','Tumores','Diabetes','Acidentes','Suicidio','Ap.Resp.','Ap.Dig.']
 tmp3.plot.bar()
 plt.title('Portugal - Nr of deaths by disease from 2010-2018')
 plt.yticks(np.arange(0, 35000, 2000))
 plt.grid(linestyle=':')
-# =============================================================================
+
+# PLOT 4: Table of % deaths between diseases (including covid-19)
+
+
