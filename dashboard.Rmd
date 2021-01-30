@@ -1,0 +1,150 @@
+---
+title: "Covid in Portugal"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: spacelab
+    orientation: rows
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(ggplot2)
+library(data.table)
+library(splitstackshape)
+library(anytime)
+library(RColorBrewer)
+library(prospectr)
+
+path<-getwd()
+
+deaths_pt<-fread(paste(path,"/Data/Dados_SICO_2020-12-30-Nr_mortes.csv",sep=""),header=TRUE)
+total_covid<-fread(paste(path,"/Data/owid-covid-data.csv",sep=""))
+
+```
+
+General Numbers
+=====================================
+
+Row {data-height=400}
+--------------------------
+
+### Number of cases
+```{r}
+pt_covid<-total_covid[location=="Portugal"]
+pt_covid_month<-cSplit(pt_covid,"date","-",drop=FALSE)
+pt_covid_month[,':='(date_2=factor(date_2))]
+
+ggplotly(pt_covid_month %>%
+           ggplot()+
+           geom_col(aes(x=anydate(date),y=new_cases,fill=date_2))+
+           theme_bw()+
+           xlab("Date")+
+           ylab("Number of New Cases")+
+           ggtitle("Number of cases in Portugal")+
+           scale_fill_brewer(palette="Blues"))
+
+
+```
+
+Row {data-height=400}
+--------------------------
+
+### Number of deaths
+```{r}
+pt_covid<-total_covid[location=="Portugal"]
+pt_covid_month<-cSplit(pt_covid,"date","-",drop=FALSE)
+pt_covid_month[,':='(date_2=factor(date_2))]
+pt_covid_month[,':='(death_ratio=100*new_cases/new_deaths)]
+
+pt_covid_deaths_ratio<-melt(pt_covid_month[,.(date,date_2,date_3,new_cases,new_deaths)],id.vars=c("date","date_2","date_3"))
+
+
+ggplotly(pt_covid_month %>%
+           ggplot()+
+           geom_col(aes(x=anydate(date),y=new_deaths,fill=date_2))+
+           theme_bw()+
+           xlab("Date")+
+           ylab("Number of New Deaths")+
+           ggtitle("Number of Deaths in Portugal")+
+           scale_fill_brewer(palette="Reds"))
+
+```
+
+
+
+
+Deaths - before and after Covid-19
+=============================
+
+Column {data-width=200}
+--------------------------------
+
+### Total Number of deaths over last 11 years
+```{r,f}
+
+n_deaths_covid2020<-sum(pt_covid_month$new_deaths,na.rm = TRUE)
+
+deaths_pt_melt<-melt(deaths_pt,id.vars = "Data")
+deaths_year<-deaths_pt_melt[,.(sum_year=sum(value,na.rm = TRUE)),by=variable]
+deaths_year[variable=="2020",':='(sum_year=(sum_year-n_deaths_covid2020))]
+
+deaths_year[,':='(type="no-covid")]
+add_covid_data<-data.table(variable="2020",
+                           sum_year=n_deaths_covid2020,
+                           type="covid"
+)
+deaths_year<-rbind(deaths_year,add_covid_data)
+mean_2009_2019<-mean(deaths_year[variable!="2020",mean(sum_year)])
+sd_2009_2019<-mean(deaths_year[variable!="2020",sd(sum_year)])
+
+
+ggplotly(
+  ggplot(data=deaths_year)+
+    geom_col(aes(x=variable,y=sum_year,fill=type))+
+    xlab("Year")+
+    ylab("Number of Deaths")+
+    ggtitle("Total deaths Portugal 2009-2020")+
+    geom_hline(yintercept = mean_2009_2019,linetype="dashed",color="darkred")+
+    theme_bw()+
+    scale_fill_manual(values = c("darkred", "black"))
+)
+```
+
+
+### Deaths 2020 vs mean + 2SD 2009-2019
+```{r}
+
+months_number<-data.table(Data_1=c("Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"),
+                          month_n=1:12
+                          )
+deaths_pt_melt<-cSplit(deaths_pt_melt,"Data","-",drop=FALSE)
+deaths_pt_melt_before2020<-deaths_pt_melt[variable!="2020",.(sum_month=sum(value,na.rm = TRUE)),by=.(variable,Data_1)]
+deaths_pt_melt_before2020<-deaths_pt_melt_before2020[variable!="2020",.(mean_month=mean(sum_month,na.rm=TRUE),
+                                                             sd_month=sd(sum_month,na.rm=TRUE)),by=Data_1]
+deaths_pt_melt_before2020<-merge(deaths_pt_melt_before2020,months_number)
+deaths_pt_melt_2020<-deaths_pt_melt[variable=="2020",.(sum_month=sum(value,
+                                                                       na.rm=TRUE)),by=Data_1]
+deaths_pt_melt_2020<-merge(deaths_pt_melt_2020,months_number)
+
+ggplotly(ggplot()+
+  geom_line(data=deaths_pt_melt_before2020,aes(x=month_n,
+                                               y=mean_month+2*sd_month))+
+  geom_line(data=deaths_pt_melt_before2020,aes(x=month_n,
+                                               y=mean_month-2*sd_month))+
+  geom_point(data=deaths_pt_melt_2020,aes(x=month_n,y=sum_month),size=2,color="darkred")+
+  theme_bw()+
+  ggtitle("Deaths 2020 |Comparison with mean values 2009-2019 ")+
+  xlab("Month")+
+  ylab("Number of Deaths")+
+  scale_x_continuous(breaks = seq(1, 12, 1)))
+
+
+```
+
+
+
+
+About this dashboard
+============================
