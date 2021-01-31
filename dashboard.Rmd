@@ -109,7 +109,9 @@ ggplotly(
     geom_hline(yintercept = mean_2009_2019,linetype="dashed",color="darkred")+
     theme_bw()+
     scale_fill_manual(values = c("darkred", "black"))
-)
+)%>%layout(legend = list(orientation = 'h'))%>% 
+  layout(legend = list(x = 0, y = 0.98))
+
 ```
 
 
@@ -118,27 +120,47 @@ ggplotly(
 
 months_number<-data.table(Data_1=c("Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"),
                           month_n=1:12
-                          )
+)
 deaths_pt_melt<-cSplit(deaths_pt_melt,"Data","-",drop=FALSE)
 deaths_pt_melt_before2020<-deaths_pt_melt[variable!="2020",.(sum_month=sum(value,na.rm = TRUE)),by=.(variable,Data_1)]
 deaths_pt_melt_before2020<-deaths_pt_melt_before2020[variable!="2020",.(mean_month=mean(sum_month,na.rm=TRUE),
-                                                             sd_month=sd(sum_month,na.rm=TRUE)),by=Data_1]
+                                                                        sd_month=sd(sum_month,na.rm=TRUE)),by=Data_1]
 deaths_pt_melt_before2020<-merge(deaths_pt_melt_before2020,months_number)
 deaths_pt_melt_2020<-deaths_pt_melt[variable=="2020",.(sum_month=sum(value,
-                                                                       na.rm=TRUE)),by=Data_1]
+                                                                     na.rm=TRUE)),by=Data_1]
 deaths_pt_melt_2020<-merge(deaths_pt_melt_2020,months_number)
+deaths_pt_by_covid_month<-pt_covid_month[,.(new_deaths,date,date_2)][,.(sum_month_covid=sum(new_deaths,na.rm=TRUE)),by=date_2]
+setnames(deaths_pt_by_covid_month,"date_2","month_n")
+deaths_pt_by_covid_month[,':='(month_n=as.numeric(as.character(month_n)))]
+
+all_deaths_detail<-merge(deaths_pt_by_covid_month,deaths_pt_melt_2020,
+                         by="month_n")
+
+all_deaths_detail[,':='(Total_without_covid=sum_month-sum_month_covid)]
+all_deaths_detail<-melt(all_deaths_detail,id.vars = c("month_n","Data_1","sum_month"))
+all_deaths_detail[,':='(variable=gsub("sum_month_covid","Deaths Covid",variable))]
+all_deaths_detail[,':='(variable=gsub("Total_without_covid","Deaths Other Causes",variable))]
+
+line_legend<-c("Mean+2SD (2009-2019)"="darkgrey",
+               "Mean-2SD (2009-2019)"="darkgrey"
+               )
 
 ggplotly(ggplot()+
-  geom_line(data=deaths_pt_melt_before2020,aes(x=month_n,
-                                               y=mean_month+2*sd_month))+
-  geom_line(data=deaths_pt_melt_before2020,aes(x=month_n,
-                                               y=mean_month-2*sd_month))+
-  geom_point(data=deaths_pt_melt_2020,aes(x=month_n,y=sum_month),size=2,color="darkred")+
-  theme_bw()+
-  ggtitle("Deaths 2020 |Comparison with mean values 2009-2019 ")+
-  xlab("Month")+
-  ylab("Number of Deaths")+
-  scale_x_continuous(breaks = seq(1, 12, 1)))
+           geom_line(data=deaths_pt_melt_before2020,aes(x=month_n,
+                                                        y=mean_month+2*sd_month,color="Mean+2SD (2009-2019)"))+
+           geom_line(data=deaths_pt_melt_before2020,aes(x=month_n,
+                                                        y=mean_month-2*sd_month,color="Mean-2SD (2009-2019)"))+
+          
+           geom_col(data=all_deaths_detail,aes(x=month_n,y=value,fill=variable))+
+           theme_bw()+
+           ggtitle("Deaths 2020 |Comparison with mean values 2009-2019 ")+
+           xlab("Month")+
+           ylab("Number of Deaths")+
+           scale_x_continuous(breaks = seq(1, 12, 1))+
+           scale_fill_manual(values=c("darkred","black"))+
+           scale_color_manual(values=line_legend)
+           )%>%layout(legend = list(orientation = 'h'))%>% 
+  layout(legend = list(x = 0, y = 0.98))
 
 
 ```
