@@ -4,7 +4,7 @@ output:
   flexdashboard::flex_dashboard:
     theme: spacelab
     orientation: rows
-    vertical_layout: fill
+    vertical_layout: scroll
 ---
 
 ```{r setup, include=FALSE}
@@ -164,6 +164,42 @@ ggplotly(ggplot()+
 
 
 ```
+
+Row {data-height=600}
+--------------------------
+
+### Correlation between cases increase and death increase
+```{r}
+pt_covid_month[,':='(month_n=as.numeric(as.character(date_2)))]
+pt_covid_month<-merge(pt_covid_month,months_number,by="month_n")
+pt_covid_month[,':='(Date_1=factor(Data_1,levels = months_number$Data_1))]
+
+ggplotly(pt_covid_month%>%
+  ggplot()+
+  geom_point(aes(x=new_cases,y=new_deaths,color=Data_1))+
+  geom_smooth(method = "lm",aes(x=new_cases,y=new_deaths))+
+    ylab("New Deaths")+
+    xlab("New Covid Cases")+
+  theme_bw())
+
+```
+
+
+### Correlation between cases increase and death increase - month view
+```{r}
+
+ggplotly(pt_covid_month[date_2!=2]%>%
+  ggplot()+
+  geom_point(aes(x=new_cases,y=new_deaths,color=date_2))+
+  geom_smooth(method = "lm",aes(x=new_cases,y=new_deaths))+
+  facet_wrap(~Date_1,scales="free")+
+  theme_bw()+
+  theme(legend.position = "none"))
+  
+
+```
+
+
 
 
 
